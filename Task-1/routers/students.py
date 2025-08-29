@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from lib import *
 from datetime import timedelta
 from database import get_session
-from sqlmodel import Session
+from sqlmodel import Session, select
 from typing import Annotated
 
 
@@ -12,11 +12,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 router = APIRouter()
 SessionDep = Annotated[Session, Depends(get_session)]
-
-
-@router.get('/')
-def home(users=Depends(load_users)):
-    return {'data': users}
 
 
 @router.post('/create-student', status_code=201)
@@ -36,7 +31,8 @@ def create_user(data: UserInFile, users=Depends(load_users)):
     return {"msg": "User created successfully"}
 
 
-@router.post("/login",)
+# private route
+@router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     username = form_data.username
     password = form_data.password
@@ -51,11 +47,45 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/", response_model=StudentRead, status_code=status.HTTP_201_CREATED)
-def create_student(student_data: StudentCreate, session: Session = Depends(get_session), username=Depends(get_current_user)):
-    student = Student(name=student_data.name, age=student_data.age,
-                      email=student_data.email, grades=student_data.grades)
+@router.get('/')
+def get_students(session: Session = Depends(get_session),
+                 offset: int = 0, limit: int = 10):
+    students = session.exec(select(Student).offset(offset).limit(limit)).all()
+    return students
+
+
+@router.put("/{student_id}", response_model=StudentRead, status_code=status.HTTP_202_ACCEPTED)
+def create_student(student_id: int, student_data: StudentCreate, session: Session = Depends(get_session), username=Depends(get_current_user)):
+    student = session.get(Student, student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    student.name = student_data.name
+    student.age = student_data.age
+    student.grades = student_data.grades
     session.add(student)
     session.commit()
     session.refresh(student)
+    return student
+
+
+@router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_student(student_id: int, session: Session = Depends(get_session), username=Depends
+                   (get_current_user)):
+    student = session.get(Student, student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    session.delete(student)
+    session.commit()
+    return {"msg": "Student deleted successfully"}
+
+
+@router.get("/{student_id}", response_model=StudentRead)
+def get_student(student_id: int, session: Session = Depends(get_session), username=Depends
+                (get_current_user)):
+    student = session.get(Student, student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
     return student
