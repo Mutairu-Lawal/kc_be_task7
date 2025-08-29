@@ -51,10 +51,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# @router.post("/students/", response_model=StudentRead, status_code=status.HTTP_201_CREATED)
-# def create_student(student: StudentCreate, session: Session = Depends(get_session), username: str = Depends(get_current_user)):
-#     db_student = Student.from_orm(student)
-#     session.add(db_student)
-#     session.commit()
-#     session.refresh(db_student)
-#     return db_student
+@router.post("/", response_model=StudentRead, status_code=status.HTTP_201_CREATED)
+def create_student(student_data: StudentCreate, session: Session = Depends(get_session), username=Depends(get_current_user)):
+    student = Student(name=student_data.name, age=student_data.age,
+                      email=student_data.email, grades=student_data.grades)
+    session.add(student)
+    session.commit()
+    session.refresh(student)
+    return student

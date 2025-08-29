@@ -6,7 +6,7 @@ from pydantic import EmailStr, BaseModel
 # ---------- DB models ----------
 class StudentBase(SQLModel):
     name: str
-    age: int = Field(gt=1)
+    age: int = Field(gt=0)
     email: EmailStr
     # We'll store grades as a JSON string in SQLite; for other DBs, you can use JSON type
     grades: Optional[str] = "[]"

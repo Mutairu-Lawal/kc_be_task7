@@ -25,11 +25,4 @@ app.add_middleware(
 )
 
 
-# # Startup event
-# @app.on_event("startup")
-# async def on_startup():
-#     create_db_and_tables()
-#     # ensure_users_file()
-
-
 app.include_router(students.router, prefix="/students", tags=["students"])
