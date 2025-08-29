@@ -9,19 +9,19 @@ import os
 from datetime import datetime, timedelta, timezone
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="students/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
 
 USERS_FILE = 'users.json'
 SECRET_KEY = 'kodecamp-final-task-to-capstone-project'
 ALGORITHM = "HS256"
 
 
-# def authenticate_user(username: str, password: str) -> Optional[UserInFile]:
-#     users = load_users()
-#     for u in users:
-#         if u.username.lower() == username.lower() and pwd_context.verify(password, u.hashed_password):
-#             return True
-#     return None
+def authenticate_user(username: str, password: str):
+    users = load_users()
+    for u in users:
+        if u['username'].lower() == username.lower() and pwd_context.verify(password, u['password']):
+            return True
+    return None
 
 
 def password_hashed(PLAIN_PASSWORD):
@@ -33,7 +33,7 @@ def load_users(path: str = USERS_FILE):
         return []
     with open(path, "r") as f:
         raw = json.load(f)
-    return [Users(**r) for r in raw]
+    return [r for r in raw]
 
 
 def save_users(data: Users, users: List[Users]):

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from models import Users
-from lib import load_users, password_hashed, save_users
+from lib import *
 
 
 router = APIRouter()
@@ -27,6 +28,16 @@ def create_user(data: Users, users=Depends(load_users)):
     return {"msg": "User created successfully"}
 
 
-# @router.post("/login")
-# def login_user():
-#     return {"message": "User logged in successfully"}
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    username = form_data.username
+    password = form_data.password
+    if not authenticate_user(username, password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password")
+
+    access_token_expires = timedelta(minutes=60)
+
+    access_token = create_access_token(
+        data={"sub": username}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}
